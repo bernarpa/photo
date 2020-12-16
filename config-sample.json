@@ -1,0 +1,34 @@
+{
+    "workers": 10,
+    "targets": [
+        {
+            "name": "test",
+            "target_type": "local",
+            "work_dir": "C:\\Users\\myuser\\tmp\\work\\",
+            "collections": [
+                "C:\\Users\\myuser\\Pictures\\Rogue photos",
+                "C:\\Users\\myuser\\Pictures\\Webcam"
+            ],
+            "cameras": [
+                "Lumia 550"
+            ]
+        },
+        {
+            "name": "mynas",
+            "target_type": "ssh",
+            "work_dir": "/tmp/photo/",
+            "ssh_exe": "photo-linux",
+            "ssh_host": "nas.dyndns.com",
+            "ssh_port": "2222",
+            "ssh_user": "user",
+            "ssh_password": "password",
+            "collections": [
+                "/share/Photos/Yearly",
+                "/share/Photos/Wife"
+            ],
+            "cameras": [
+                "iPhone 11"
+            ]
+        }
+    ]
+}

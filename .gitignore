@@ -1,0 +1,8 @@
+/bin
+/pkg
+/dist
+/github.com/rwcarlsen
+/github.com/kballard
+/github.com/tmc
+/golang.org
+/.vscode
