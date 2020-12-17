@@ -11,7 +11,7 @@ func showHelp() {
 	fmt.Println()
 	fmt.Println("Usage: photo <OPERATION>")
 	fmt.Println()
-	fmt.Println("   OPERATION     available options: help, fix, filter, stats, update")
+	fmt.Println("   OPERATION     available options: help, fix, filter, info, stats, update")
 	fmt.Println()
 }
 
@@ -33,6 +33,8 @@ func main() {
 		operations.RunCommandFunction(operations.Filter, operations.ShowHelpFilter, true)
 	case "fix":
 		operations.RunCommandFunction(operations.Fix, operations.ShowHelpFix, false)
+	case "info":
+		operations.RunCommandFunction(operations.Info, operations.ShowHelpInfo, false)
 	default:
 		fmt.Printf("Invalid operation: %s\n", op)
 		showHelp()

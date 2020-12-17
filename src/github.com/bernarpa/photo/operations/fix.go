@@ -9,7 +9,7 @@ import (
 	"github.com/bernarpa/photo/config"
 )
 
-// ShowHelpFix prints the help for the stats operation.
+// ShowHelpFix prints the help for the info operation.
 func ShowHelpFix() {
 	fmt.Println()
 	fmt.Println("Usage: photo fix [directory]")

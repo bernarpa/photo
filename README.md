@@ -27,6 +27,7 @@ Currently Photo supports the following operations:
 2. **filter**: filters the photos contained in a local directory by separating these already in the collection from the new ones, which are neatly renamed and organized in "daily" folders.
 3. **update**: manually update the collection index cache (please note that the *stats* and *filter* operations will automatically performe an update if the collection index cache is not present of if it is older than one day).
 4. **fix**: renames JPEG files accordingly to their Exif timestamp and converts HEIC files to the JPEG format. This command doesn't require a target.
+5. **info**: shows Exif metadata for a supported image file. This command doesn't require a target.
 
 Please note that Photo is a multi-platform tool. It supports any combination of Linux, Windows and Mac (currently Intel only, as it's what I own) systems. Depending on your system, you should use one of the following executables to run Photo:
 
