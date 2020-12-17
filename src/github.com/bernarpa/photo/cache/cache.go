@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/bernarpa/photo/config"
+	"github.com/bernarpa/photo/exiftool"
 	"github.com/bernarpa/photo/utils"
 	"github.com/rwcarlsen/goexif/exif"
 )
@@ -42,7 +43,7 @@ func (photo *Photo) HasExif() bool {
 // If the photo is not an HEIC file or if there is already a
 // file with the same name but .jpg extension this function
 // does nothing.
-func (photo *Photo) HeicToJPEG() error {
+func (photo *Photo) HeicToJPEG(et *exiftool.Exiftool) error {
 	ext := filepath.Ext(photo.Path)
 	if strings.ToLower(ext) == ".heic" {
 		jpg := strings.TrimSuffix(photo.Path, ext) + ".jpg"
@@ -58,7 +59,7 @@ func (photo *Photo) HeicToJPEG() error {
 		if err != nil {
 			return err
 		}
-		jpgPhoto, err := AnalyzePhoto(jpg, jpgInfo)
+		jpgPhoto, err := AnalyzePhoto(jpg, jpgInfo, et)
 		os.Remove(photo.Path)
 		if err != nil {
 			log.Printf("Warning: unable to analyze %s: %s\n", jpg, err.Error())
@@ -80,7 +81,7 @@ func (photo *Photo) RenameToExif() error {
 	if photo.Timestamp != 0 {
 		t := time.Unix(photo.Timestamp, 0)
 		timeStr := t.Format("2006-01-02_15-04-05")
-		newFileName := timeStr + ".jpg"
+		newFileName := timeStr + strings.ToLower(filepath.Ext(photo.Path))
 		newPath := filepath.Join(filepath.Dir(photo.Path), newFileName)
 		err := os.Rename(photo.Path, newPath)
 		if err != nil {
@@ -128,33 +129,45 @@ func Load(conf *config.Config, target *config.Target) (*Cache, error) {
 }
 
 // AnalyzePhoto analyizes a JPEG files, including the Exif metadata.
-func AnalyzePhoto(path string, info os.FileInfo) (Photo, error) {
+func AnalyzePhoto(path string, info os.FileInfo, et *exiftool.Exiftool) (Photo, error) {
 	photo := Photo{Path: path, Size: info.Size()}
-	f, err := os.Open(path)
-	if err != nil {
-		//log.Printf("Error opening %s: %s", path, err.Error())
-		return photo, err
-	}
-	defer f.Close()
-	x, err := exif.Decode(f)
-	if err == nil {
-		tm, err := x.DateTime()
-		if err == nil {
-			photo.Timestamp = tm.Unix()
+	if isSupportedImage(path) {
+		// Use the fast Go Exif implementation for images
+		f, err := os.Open(path)
+		if err != nil {
+			//log.Printf("Error opening %s: %s", path, err.Error())
+			return photo, err
 		}
-		camModel, err := x.Get(exif.Model)
-		if err == nil && camModel != nil {
-			model, modelErr := camModel.StringVal()
-			if modelErr == nil {
-				photo.Camera = model
+		defer f.Close()
+		x, err := exif.Decode(f)
+		if err == nil {
+			tm, err := x.DateTime()
+			if err == nil {
+				photo.Timestamp = tm.Unix()
+			}
+			camModel, err := x.Get(exif.Model)
+			if err == nil && camModel != nil {
+				model, modelErr := camModel.StringVal()
+				if modelErr == nil {
+					photo.Camera = model
+				}
 			}
 		}
+	} else {
+		// Use exiftool for videos
+		out, err := et.Parse(path)
+		if err != nil {
+			return photo, err
+		}
+		photo.Camera = strings.TrimSpace(out.Make + " " + out.Model)
+		photo.Timestamp = out.Timestamp
 	}
 	// The ideal hash is camera + timestamp
 	if photo.Timestamp != 0 && photo.Camera != "" {
 		photo.Hash = strconv.FormatInt(photo.Timestamp, 10) + "|" + photo.Camera
 	} else {
 		// If that doesn't work, try with the file MD5
+		var err error
 		photo.Hash, err = utils.MD5(photo.Path)
 		if err != nil {
 			// In case of MD5 error, use the file name as hash
@@ -174,24 +187,48 @@ type workerOutput struct {
 	err   error
 }
 
-func workerAnalyzePhoto(id int, jobs <-chan workerInput, results chan<- workerOutput) {
+func workerAnalyzePhoto(id int, jobs <-chan workerInput, results chan<- workerOutput, et *exiftool.Exiftool) {
 	for j := range jobs {
-		photo, err := AnalyzePhoto(j.path, j.info)
+		photo, err := AnalyzePhoto(j.path, j.info, et)
 		results <- workerOutput{photo, err}
 	}
 }
 
+func isSupportedImage(path string) bool {
+	ext := strings.ToLower(filepath.Ext(path))
+	return ext == ".bmp" ||
+		ext == ".gif" ||
+		ext == ".heic" ||
+		ext == ".jpeg" ||
+		ext == ".png" ||
+		ext == ".tif" ||
+		ext == ".tiff"
+}
+
+func isSupportedVideo(path string) bool {
+	ext := strings.ToLower(filepath.Ext(path))
+	return ext == ".3gp" ||
+		ext == ".avi" ||
+		ext == ".m4v" ||
+		ext == ".mov" ||
+		ext == ".mp4"
+}
+
 // AnalyzeDir fills the cache with data about the JPEG images contained in the
 // specified directory.
-func (myCache *Cache) AnalyzeDir(dir string, numWorkers int) error {
+func (myCache *Cache) AnalyzeDir(dir string, numWorkers int, et *exiftool.Exiftool, ignores []string) error {
 	var inputs []workerInput
 	err := filepath.Walk(dir,
 		func(path string, info os.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
-			lowerPath := strings.ToLower(path)
-			if strings.HasSuffix(lowerPath, ".jpg") || strings.HasSuffix(lowerPath, ".jpeg") || strings.HasSuffix(lowerPath, ".heic") {
+			for _, ignore := range ignores {
+				if strings.Contains(path, ignore) {
+					return nil
+				}
+			}
+			if isSupportedImage(path) || isSupportedVideo(path) {
 				inputs = append(inputs, workerInput{path, info})
 			}
 			return nil
@@ -203,7 +240,7 @@ func (myCache *Cache) AnalyzeDir(dir string, numWorkers int) error {
 	jobs := make(chan workerInput, numJobs)
 	results := make(chan workerOutput, numJobs)
 	for w := 0; w < numWorkers; w++ {
-		go workerAnalyzePhoto(w, jobs, results)
+		go workerAnalyzePhoto(w, jobs, results, et)
 	}
 	for j := 0; j < numJobs; j++ {
 		jobs <- inputs[j]
@@ -213,6 +250,7 @@ func (myCache *Cache) AnalyzeDir(dir string, numWorkers int) error {
 		output := <-results
 		if output.err != nil {
 			//return output.err
+			log.Printf("Err: %s\n", output.err.Error())
 			continue
 		}
 		myCache.Photos = append(myCache.Photos, output.photo)

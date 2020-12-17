@@ -1,5 +1,7 @@
 {
     "workers": 10,
+    "perl": "C:\\Perl64\\bin\\perl.exe",
+    "path_separator": "\\",
     "targets": [
         {
             "name": "test",
@@ -17,6 +19,8 @@
             "name": "mynas",
             "target_type": "ssh",
             "work_dir": "/tmp/photo/",
+            "perl": "/share/CACHEDEV1/.qpkg/perl/bin/perl",
+            "ssh_path_separator": "/",
             "ssh_exe": "photo-linux",
             "ssh_host": "nas.dyndns.com",
             "ssh_port": "2222",
@@ -28,6 +32,9 @@
             ],
             "cameras": [
                 "iPhone 11"
+            ],
+            "ignore": [
+                ".@__thumb"
             ]
         }
     ]

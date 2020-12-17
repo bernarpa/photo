@@ -12,6 +12,7 @@ if ($args.Count -eq 0) {
         else {
             Copy-Item config-sample.json dist\config.json
         }
+        Copy-Item -Recurse exiftool dist\exiftool
     }
     $Env:GOPATH = $PSScriptRoot
     # Ensure that the third-party libraries are present

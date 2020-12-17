@@ -6,8 +6,8 @@ import (
 	"os"
 
 	"github.com/bernarpa/photo/config"
+	"github.com/bernarpa/photo/exiftool"
 	"github.com/rwcarlsen/goexif/exif"
-	"github.com/rwcarlsen/goexif/mknote"
 	"github.com/rwcarlsen/goexif/tiff"
 )
 
@@ -37,16 +37,10 @@ func Info(conf *config.Config, target *config.Target) {
 		ShowHelpInfo()
 		return
 	}
-	exif.RegisterParsers(mknote.All...)
-	f, err := os.Open(fileName)
+	et, err := exiftool.Create(conf, target)
 	if err != nil {
-		log.Printf("Error while opening %s: %s\n", fileName, err.Error())
+		log.Printf("exiftool initialization error: %s\n", err.Error())
 		return
 	}
-	x, err := exif.Decode(f)
-	if err != nil {
-		log.Printf("Error while decoding metadata for %s: %s\n", fileName, err.Error())
-		return
-	}
-	x.Walk(infoWalker{})
+	et.Dump(fileName)
 }

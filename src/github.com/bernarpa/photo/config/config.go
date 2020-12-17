@@ -11,22 +11,27 @@ import (
 
 // Config is the struct that represents a Photo config.json file.
 type Config struct {
-	Workers int      `json:"workers"`
-	Targets []Target `json:"targets"`
+	Workers       int      `json:"workers"`
+	Targets       []Target `json:"targets"`
+	Perl          string   `json:"perl"`
+	PathSeparator string   `json:"path_separator"`
 }
 
 // Target is a photo collection to be manage through Photo. it can be local or accessible via SSH.
 type Target struct {
-	Name        string   `json:"name"`
-	TargetType  string   `json:"target_type"`
-	WorkDir     string   `json:"work_dir"`
-	SSHExe      string   `json:"ssh_exe"`
-	SSHHost     string   `json:"ssh_host"`
-	SSHPort     string   `json:"ssh_port"`
-	SSHUser     string   `json:"ssh_user"`
-	SSHPassword string   `json:"ssh_password"`
-	Collections []string `json:"collections"`
-	Cameras     []string `json:"cameras"`
+	Name             string   `json:"name"`
+	TargetType       string   `json:"target_type"`
+	WorkDir          string   `json:"work_dir"`
+	Perl             string   `json:"perl"`
+	SSHPathSeparator string   `json:"ssh_path_separator"`
+	SSHExe           string   `json:"ssh_exe"`
+	SSHHost          string   `json:"ssh_host"`
+	SSHPort          string   `json:"ssh_port"`
+	SSHUser          string   `json:"ssh_user"`
+	SSHPassword      string   `json:"ssh_password"`
+	Collections      []string `json:"collections"`
+	Cameras          []string `json:"cameras"`
+	Ignore           []string `json:"ignore"`
 }
 
 // Load reads the content of the config.json file that should be in the same directory
@@ -44,7 +49,10 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 	var c Config
-	json.Unmarshal(byteValue, &c)
+	err = json.Unmarshal(byteValue, &c)
+	if err != nil {
+		return nil, err
+	}
 	return &c, nil
 }
 

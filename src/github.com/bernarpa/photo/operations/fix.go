@@ -7,6 +7,7 @@ import (
 
 	"github.com/bernarpa/photo/cache"
 	"github.com/bernarpa/photo/config"
+	"github.com/bernarpa/photo/exiftool"
 )
 
 // ShowHelpFix prints the help for the info operation.
@@ -28,11 +29,17 @@ func Fix(conf *config.Config, target *config.Target) {
 		localDir = "."
 	}
 	localCache := cache.Create(target)
-	localCache.AnalyzeDir(localDir, conf.Workers)
+	et, err := exiftool.Create(conf, target)
+	if err != nil {
+		log.Printf("exiftool instantation error: %s\n", err.Error())
+		return
+	}
+	localCache.AnalyzeDir(localDir, conf.Workers, et, target.Ignore)
 	for _, localPhoto := range localCache.Photos {
 		fmt.Printf("Fixing %s\n", localPhoto.Path)
-		localPhoto.HeicToJPEG()
-		if !localPhoto.HasExif() {
+		localPhoto.HeicToJPEG(et)
+		if localPhoto.Timestamp == 0 {
+			fmt.Println("no timestamp")
 			continue
 		}
 		err := localPhoto.RenameToExif()

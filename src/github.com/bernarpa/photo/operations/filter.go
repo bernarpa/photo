@@ -9,6 +9,7 @@ import (
 
 	"github.com/bernarpa/photo/cache"
 	"github.com/bernarpa/photo/config"
+	"github.com/bernarpa/photo/exiftool"
 )
 
 // ShowHelpFilter prints the help for the stats operation.
@@ -31,6 +32,11 @@ func Filter(conf *config.Config, target *config.Target) {
 	} else {
 		localDir = "."
 	}
+	et, err := exiftool.Create(conf, target)
+	if err != nil {
+		log.Printf("exiftool instantation error: %s\n", err.Error())
+		return
+	}
 	duplicatesDir := filepath.Join(localDir, "AlreadyImported")
 	if _, err := os.Stat(duplicatesDir); os.IsNotExist(err) {
 		os.Mkdir(duplicatesDir, 0755)
@@ -45,7 +51,7 @@ func Filter(conf *config.Config, target *config.Target) {
 	}
 	myCache := loadLocalCache(conf, target)
 	localCache := cache.Create(target)
-	localCache.AnalyzeDir(localDir, conf.Workers)
+	localCache.AnalyzeDir(localDir, conf.Workers, et, target.Ignore)
 	// Create an hash map of the target cache
 	hashMap := make(map[string]cache.Photo)
 	for _, targetPhoto := range myCache.Photos {
@@ -55,7 +61,7 @@ func Filter(conf *config.Config, target *config.Target) {
 	// photos that are on localCache but NOT on myCache
 	for _, localPhoto := range localCache.Photos {
 		fmt.Printf("Filtering %s\n", localPhoto.Path)
-		localPhoto.HeicToJPEG()
+		localPhoto.HeicToJPEG(et)
 		if !localPhoto.HasExif() {
 			newPath := filepath.Join(noExifDir, filepath.Base(localPhoto.Path))
 			err := os.Rename(localPhoto.Path, newPath)
