@@ -29,11 +29,7 @@ func Fix(conf *config.Config, target *config.Target) {
 		localDir = "."
 	}
 	localCache := cache.Create(target)
-	et, err := exiftool.Create(conf, target)
-	if err != nil {
-		log.Printf("exiftool instantation error: %s\n", err.Error())
-		return
-	}
+	et := exiftool.Create(conf.Perl)
 	localCache.AnalyzeDir(localDir, conf.Workers, et, target.Ignore)
 	for _, localPhoto := range localCache.Photos {
 		fmt.Printf("Fixing %s\n", localPhoto.Path)

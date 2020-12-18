@@ -32,11 +32,7 @@ func Filter(conf *config.Config, target *config.Target) {
 	} else {
 		localDir = "."
 	}
-	et, err := exiftool.Create(conf, target)
-	if err != nil {
-		log.Printf("exiftool instantation error: %s\n", err.Error())
-		return
-	}
+	et := exiftool.Create(conf.Perl)
 	duplicatesDir := filepath.Join(localDir, "AlreadyImported")
 	if _, err := os.Stat(duplicatesDir); os.IsNotExist(err) {
 		os.Mkdir(duplicatesDir, 0755)

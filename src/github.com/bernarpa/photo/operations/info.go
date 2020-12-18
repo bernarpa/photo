@@ -2,7 +2,6 @@ package operations
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/bernarpa/photo/config"
@@ -37,10 +36,6 @@ func Info(conf *config.Config, target *config.Target) {
 		ShowHelpInfo()
 		return
 	}
-	et, err := exiftool.Create(conf, target)
-	if err != nil {
-		log.Printf("exiftool initialization error: %s\n", err.Error())
-		return
-	}
+	et := exiftool.Create(conf.Perl)
 	et.Dump(fileName)
 }

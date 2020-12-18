@@ -53,6 +53,13 @@ func Load() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Set the default Perl interpreter for local targets for
+	// which a specific interpreter isn't configured.
+	for i := range c.Targets {
+		if c.Targets[i].Perl == "" {
+			c.Targets[i].Perl = c.Perl
+		}
+	}
 	return &c, nil
 }
 

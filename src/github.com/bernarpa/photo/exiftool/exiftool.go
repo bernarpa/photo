@@ -2,14 +2,12 @@ package exiftool
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"os/exec"
 	"path/filepath"
 	"time"
 
-	"github.com/bernarpa/photo/config"
 	"github.com/bernarpa/photo/utils"
 )
 
@@ -28,14 +26,8 @@ type Exiftool struct {
 }
 
 // Create creates a new Exiftool wrapper instance.
-func Create(conf *config.Config, target *config.Target) (*Exiftool, error) {
-	if target != nil && target.Perl != "" {
-		return &Exiftool{Perl: target.Perl}, nil
-	} else if conf != nil && conf.Perl != "" {
-		return &Exiftool{Perl: conf.Perl}, nil
-	} else {
-		return nil, errors.New("Perl interpreter not found")
-	}
+func Create(perl string) *Exiftool {
+	return &Exiftool{Perl: perl}
 }
 
 func parseExifTstamp(exifTstamp string) int64 {

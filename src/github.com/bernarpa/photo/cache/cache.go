@@ -199,6 +199,7 @@ func isSupportedImage(path string) bool {
 	return ext == ".bmp" ||
 		ext == ".gif" ||
 		ext == ".heic" ||
+		ext == ".jpg" ||
 		ext == ".jpeg" ||
 		ext == ".png" ||
 		ext == ".tif" ||

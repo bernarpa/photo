@@ -80,11 +80,7 @@ func sshUpdate(conf *config.Config, target *config.Target) {
 
 // LocalUpdate updates the cache for a local target.
 func LocalUpdate(conf *config.Config, target *config.Target) {
-	et, err := exiftool.Create(conf, target)
-	if err != nil {
-		log.Printf("exiftool instantation error: %s\n", err.Error())
-		return
-	}
+	et := exiftool.Create(target.Perl)
 	log.Printf("exiftool created: %s\n", et.Perl)
 	myCache := cache.Create(target)
 	for _, targetDir := range target.Collections {
