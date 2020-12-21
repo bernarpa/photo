@@ -145,13 +145,23 @@ func AnalyzePhoto(path string, info os.FileInfo, et *exiftool.Exiftool) (Photo, 
 			if err == nil {
 				photo.Timestamp = tm.Unix()
 			}
-			camModel, err := x.Get(exif.Model)
-			if err == nil && camModel != nil {
-				model, modelErr := camModel.StringVal()
-				if modelErr == nil {
-					photo.Camera = model
+			make := ""
+			camMake, err := x.Get(exif.Make)
+			if err == nil && camMake != nil {
+				make, err = camMake.StringVal()
+				if err != nil {
+					make = ""
 				}
 			}
+			model := ""
+			camModel, err := x.Get(exif.Model)
+			if err == nil && camModel != nil {
+				model, err = camModel.StringVal()
+				if err != nil {
+					model = ""
+				}
+			}
+			photo.Camera = strings.TrimSpace(make + " " + model)
 		}
 	} else {
 		// Use exiftool for videos
@@ -159,8 +169,8 @@ func AnalyzePhoto(path string, info os.FileInfo, et *exiftool.Exiftool) (Photo, 
 		if err != nil {
 			return photo, err
 		}
-		photo.Camera = strings.TrimSpace(out.Make + " " + out.Model)
 		photo.Timestamp = out.Timestamp
+		photo.Camera = strings.TrimSpace(out.Make + " " + out.Model)
 	}
 	// The ideal hash is camera + timestamp
 	if photo.Timestamp != 0 && photo.Camera != "" {
