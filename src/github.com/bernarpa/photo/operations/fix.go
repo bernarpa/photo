@@ -30,7 +30,7 @@ func Fix(conf *config.Config, target *config.Target) {
 	}
 	localCache := cache.Create(target)
 	et := exiftool.Create(conf.Perl)
-	localCache.AnalyzeDir(localDir, conf.Workers, et, target.Ignore)
+	localCache.AnalyzeDir(localDir, conf.Workers, et, []string{})
 	for _, localPhoto := range localCache.Photos {
 		fmt.Printf("Fixing %s\n", localPhoto.Path)
 		localPhoto.HeicToJPEG(et)
