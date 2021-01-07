@@ -20,6 +20,14 @@ func GetExePath() string {
 	return filepath.Dir(exe)
 }
 
+// EnsureDir ensures that the specified directory exists
+func EnsureDir(directory string) string {
+	if _, err := os.Stat(directory); os.IsNotExist(err) {
+		os.MkdirAll(directory, 0755)
+	}
+	return directory
+}
+
 // MD5 computes the MD5 hash of a file.
 func MD5(path string) (string, error) {
 	var md5Hash string

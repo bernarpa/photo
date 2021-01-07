@@ -102,11 +102,8 @@ func Create(target *config.Target) *Cache {
 	}
 }
 
-// Load loads a cache from a cache file. If the cache file doesn't exist
-// exist or if the cache is too old, the cache will be updated.
-func Load(conf *config.Config, target *config.Target) (*Cache, error) {
-	filename := target.GetLocalCachePath()
-	file, err := os.Open(filename)
+func loadFile(path string) (*Cache, error) {
+	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
@@ -126,6 +123,13 @@ func Load(conf *config.Config, target *config.Target) (*Cache, error) {
 		return nil, err
 	}
 	return &c, nil
+}
+
+// Load loads a cache from a cache file. If the cache file doesn't exist
+// exist or if the cache is too old, the cache will be updated.
+func Load(conf *config.Config, target *config.Target) (*Cache, error) {
+	cachePath := target.GetLocalCachePath()
+	return loadFile(cachePath)
 }
 
 // AnalyzePhoto analyizes a JPEG files, including the Exif metadata.
@@ -225,6 +229,11 @@ func isSupportedVideo(path string) bool {
 		ext == ".mp4"
 }
 
+func isPhotoIgnore(path string) bool {
+	fileName := filepath.Base(path)
+	return strings.HasPrefix(fileName, "photoignore_") && strings.HasSuffix(fileName, ".json.gz")
+}
+
 // AnalyzeDir fills the cache with data about the JPEG images contained in the
 // specified directory.
 func (myCache *Cache) AnalyzeDir(dir string, numWorkers int, et *exiftool.Exiftool, ignores []string) error {
@@ -241,6 +250,14 @@ func (myCache *Cache) AnalyzeDir(dir string, numWorkers int, et *exiftool.Exifto
 			}
 			if isSupportedImage(path) || isSupportedVideo(path) {
 				inputs = append(inputs, workerInput{path, info})
+			}
+			if isPhotoIgnore(path) {
+				photoIgnore, err := loadFile(path)
+				if err != nil {
+					log.Printf("Error while loading photoignore file %s: %s\n", path, err.Error())
+				} else {
+					myCache.Photos = append(myCache.Photos, photoIgnore.Photos...)
+				}
 			}
 			return nil
 		})

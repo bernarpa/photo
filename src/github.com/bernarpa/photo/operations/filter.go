@@ -10,6 +10,7 @@ import (
 	"github.com/bernarpa/photo/cache"
 	"github.com/bernarpa/photo/config"
 	"github.com/bernarpa/photo/exiftool"
+	"github.com/bernarpa/photo/utils"
 )
 
 // ShowHelpFilter prints the help for the stats operation.
@@ -33,18 +34,9 @@ func Filter(conf *config.Config, target *config.Target) {
 		localDir = "."
 	}
 	et := exiftool.Create(conf.Perl)
-	duplicatesDir := filepath.Join(localDir, "AlreadyImported")
-	if _, err := os.Stat(duplicatesDir); os.IsNotExist(err) {
-		os.Mkdir(duplicatesDir, 0755)
-	}
-	noExifDir := filepath.Join(localDir, "NoExif")
-	if _, err := os.Stat(noExifDir); os.IsNotExist(err) {
-		os.Mkdir(noExifDir, 0755)
-	}
-	newDir := filepath.Join(localDir, "ToBeImported")
-	if _, err := os.Stat(newDir); os.IsNotExist(err) {
-		os.Mkdir(newDir, 0755)
-	}
+	duplicatesDir := utils.EnsureDir(filepath.Join(localDir, "AlreadyImported"))
+	noExifDir := utils.EnsureDir(filepath.Join(localDir, "NoExif"))
+	newDir := utils.EnsureDir(filepath.Join(localDir, "ToBeImported"))
 	myCache := loadLocalCache(conf, target)
 	localCache := cache.Create(target)
 	localCache.AnalyzeDir(localDir, conf.Workers, et, target.Ignore)
